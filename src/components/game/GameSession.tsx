@@ -34,7 +34,7 @@ export function GameSession({ exercises, profile, mode }: { exercises: Exercise[
   const rt = useRef({ step: 0, held: 0, reps: 0, accSum: 0, accN: 0, badSince: 0, lastVoice: 0, start: 0, beatStart: 0, beatBest: 0, hits: 0, beats: 0, combo: 0, goodTick: 0 });
   const saved = useRef(false);
 
-  const ex = list[idx];
+  const ex = list[idx]!;
   const goalReps = ex.mode === "reps" ? (ex.special ? 1 : Math.max(2, Math.round((ex.reps ?? 5) * band.repMult))) : 0;
   const goalHold = ex.mode === "hold" ? Math.max(3, Math.round((ex.hold ?? 5) * band.holdMult)) : 0;
   const beatMs = (ex.beatMs ?? 2000) * band.paceMult;
