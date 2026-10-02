@@ -39,7 +39,7 @@ function LibraryPage() {
           return (
             <div key={e.id} className={`flex gap-3 rounded-3xl border-4 border-foreground bg-card p-4 ${ok ? "" : "opacity-50"}`}>
               <div className="h-24 w-24 shrink-0 rounded-2xl bg-muted">
-                {e.poses[0] ? <Figure kp={POSES[e.poses[e.poses.length - 1]]} className="h-full w-full" /> : <div className="flex h-full items-center justify-center text-4xl">{e.special === "follow" ? "🎭" : "🎲"}</div>}
+                {e.poses[0] ? <Figure kp={POSES[e.poses[e.poses.length - 1]!]} className="h-full w-full" /> : <div className="flex h-full items-center justify-center text-4xl">{e.special === "follow" ? "🎭" : "🎲"}</div>}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-xs text-muted-foreground">#{e.id} · {e.difficulty} · {e.mode === "hold" ? `hold ${e.hold}s` : e.mode === "reps" ? (e.special ? "5 poses" : `${e.reps} reps`) : "flow"}</div>

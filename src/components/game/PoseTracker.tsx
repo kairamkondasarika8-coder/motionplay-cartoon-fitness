@@ -43,7 +43,7 @@ export function PoseTracker({ onFeatures, children }: { onFeatures: (f: number[]
           if (!pts) { cb.current(null); return; }
           const color = getComputedStyle(c).color;
           ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 6; ctx.lineCap = "round";
-          for (const [a, b] of LINES) {
+          for (const [a, b] of LINES as [number, number][]) {
             ctx.beginPath(); ctx.moveTo(pts[a].x * c.width, pts[a].y * c.height); ctx.lineTo(pts[b].x * c.width, pts[b].y * c.height); ctx.stroke();
           }
           for (const i of Object.values(IDX)) { ctx.beginPath(); ctx.arc(pts[i].x * c.width, pts[i].y * c.height, 7, 0, Math.PI * 2); ctx.fill(); }

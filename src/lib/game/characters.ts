@@ -113,7 +113,7 @@ function pickVoice(ch: Character) {
 
 export function line(ch: Character, ev: VoiceEvent, vars: Record<string, string | number> = {}) {
   const opts = ch.lines[ev];
-  let t = opts[Math.floor(Math.random() * opts.length)];
+  let t = opts[Math.floor(Math.random() * opts.length)] ?? "";
   for (const [k, v] of Object.entries(vars)) t = t.replaceAll(`{${k}}`, String(v));
   return t;
 }

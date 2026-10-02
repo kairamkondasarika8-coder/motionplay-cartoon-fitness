@@ -6,7 +6,7 @@ import { buildWorkout, getExercise, type Exercise } from "@/lib/game/exercises";
 import { useProfile } from "@/lib/game/useProfile";
 
 export const Route = createFileRoute("/play")({
-  validateSearch: (s: Record<string, unknown>): { ex?: number } => (s.ex ? { ex: Number(s.ex) } : {}),
+  validateSearch: (s: Record<string, unknown>): { ex?: number } => (s["ex"] ? { ex: Number(s["ex"]) } : {}),
   head: () => ({
     meta: [
       { title: "Workout — MotionPlay" },

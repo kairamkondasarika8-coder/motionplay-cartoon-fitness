@@ -11,8 +11,8 @@ export type Exercise = {
   instructions: string[];
   mode: Mode;
   poses: PoseKey[];
-  hold?: number;
-  reps?: number;
+  hold?: number | undefined;
+  reps?: number | undefined;
   beatMs?: number;
   loops?: number;
   special?: "random" | "follow";
@@ -118,7 +118,7 @@ export const danceToExercise = (d: Dance): Exercise => ({
 /** Fill in random poses for special exercises. Call from client code only. */
 export function prepare(ex: Exercise): Exercise {
   if (!ex.special) return ex;
-  const pick = (n: number) => Array.from({ length: n }, () => STANDING_KEYS[Math.floor(Math.random() * STANDING_KEYS.length)]);
+  const pick = (n: number) => Array.from({ length: n }, () => STANDING_KEYS[Math.floor(Math.random() * STANDING_KEYS.length)]!);
   return { ...ex, poses: pick(ex.special === "follow" ? 6 : 5) };
 }
 

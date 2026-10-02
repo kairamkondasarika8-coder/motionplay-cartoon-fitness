@@ -87,8 +87,8 @@ export const POSE_KEYS = Object.keys(POSES) as PoseKey[];
 export const STANDING_KEYS: PoseKey[] = ["armsUp", "leftUp", "rightUp", "hips", "handsTop", "tPose", "kneeLeft", "kneeRight", "jackOpen", "squat", "bendLeft", "bendRight", "wideStance", "lungeLeft", "tree", "warrior"];
 
 function ang(a: P, b: P, c: P) {
-  const v1 = [a[0] - b[0], a[1] - b[1]];
-  const v2 = [c[0] - b[0], c[1] - b[1]];
+  const v1: P = [a[0] - b[0], a[1] - b[1]];
+  const v2: P = [c[0] - b[0], c[1] - b[1]];
   const d = Math.hypot(v1[0], v1[1]) * Math.hypot(v2[0], v2[1]) || 1e-6;
   const cos = Math.max(-1, Math.min(1, (v1[0] * v2[0] + v1[1] * v2[1]) / d));
   return (Math.acos(cos) * 180) / Math.PI;
@@ -120,7 +120,7 @@ export function poseFeatures(key: PoseKey) {
 export function compare(user: number[], target: number[], tol: number) {
   let sum = 0; let worst = 0; let worstScore = 2; let worstDiff = 0;
   for (let i = 0; i < target.length; i++) {
-    const d = user[i] - target[i];
+    const d = user[i]! - target[i]!;
     const s = Math.max(0, Math.min(1, 1 - Math.max(0, Math.abs(d) - 5) / (tol * 2.5)));
     sum += s;
     if (s < worstScore) { worstScore = s; worst = i; worstDiff = d; }
