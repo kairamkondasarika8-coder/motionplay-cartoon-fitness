@@ -39,7 +39,7 @@ function ProfilePage() {
   const valid = name.trim() && ageOk && gender && characterId;
   const band = ageOk ? ageBand(age) : null;
 
-  const welcome = () => { if (!welcomed) { setWelcomed(true); say(CHARACTERS[0], "welcome", {}, true); } };
+  const welcome = () => { if (!welcomed) { setWelcomed(true); say(CHARACTERS[0]!, "welcome", {}, true); } };
   const pick = (id: string) => { setCharacterId(id); say(getCharacter(id), "selected", {}, true); };
   const start = (to: "/play" | "/library" | "/dance") => {
     if (!valid) return;

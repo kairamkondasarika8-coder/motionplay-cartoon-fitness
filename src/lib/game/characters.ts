@@ -87,7 +87,7 @@ export const CHARACTERS: Character[] = [
   },
 ];
 
-export const getCharacter = (id: string) => CHARACTERS.find((c) => c.id === id) ?? CHARACTERS[0];
+export const getCharacter = (id: string) => CHARACTERS.find((c) => c.id === id) ?? CHARACTERS[0]!;
 
 let voices: SpeechSynthesisVoice[] = [];
 let muted = false;

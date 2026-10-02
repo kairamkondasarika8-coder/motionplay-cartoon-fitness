@@ -8,11 +8,10 @@ const BONES: [keyof Kp, keyof Kp][] = [
 export function Figure({
   kp, color = "var(--primary)", head, dashed, className, width = 0.035,
 }: { kp: Kp; color?: string; head?: string; dashed?: boolean; className?: string; width?: number }) {
-  const ms = [(kp.ls[0] + kp.rs[0]) / 2, (kp.ls[1] + kp.rs[1]) / 2];
-  const mh = [(kp.lh[0] + kp.rh[0]) / 2, (kp.lh[1] + kp.rh[1]) / 2];
-  const dx = ms[0] - mh[0], dy = ms[1] - mh[1];
+  const msx = (kp.ls[0] + kp.rs[0]) / 2, msy = (kp.ls[1] + kp.rs[1]) / 2;
+  const dx = msx - (kp.lh[0] + kp.rh[0]) / 2, dy = msy - (kp.lh[1] + kp.rh[1]) / 2;
   const len = Math.hypot(dx, dy) || 1;
-  const hx = ms[0] + (dx / len) * 0.1, hy = ms[1] + (dy / len) * 0.1;
+  const hx = msx + (dx / len) * 0.1, hy = msy + (dy / len) * 0.1;
   return (
     <svg viewBox="0 0 1 1" className={className} aria-hidden>
       <g stroke={color} strokeWidth={width} strokeLinecap="round" fill="none" strokeDasharray={dashed ? "0.03 0.03" : undefined} opacity={dashed ? 0.85 : 1}>
