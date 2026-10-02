@@ -8,7 +8,8 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { setMuted } from "../lib/game/characters";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -78,21 +79,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "MotionPlay — Cartoon Fitness Game" },
+      { name: "description", content: "Webcam fitness game with cartoon voice coaches and live pose tracking." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap" },
     ],
   }),
   shellComponent: RootShell,
@@ -115,13 +112,35 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function MuteToggle() {
+  const [m, setM] = useState(false);
+  return (
+    <button onClick={() => { setMuted(!m); setM(!m); }} className="rounded-full border-2 border-foreground px-3 py-1 text-sm" aria-label="Toggle coach voice">
+      {m ? "🔇" : "🔊"}
+    </button>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
+  const link = "rounded-full px-3 py-1 font-display hover:bg-muted";
+  const active = { className: "bg-accent" };
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <header className="border-b-4 border-foreground bg-card">
+        <nav className="mx-auto flex max-w-6xl flex-wrap items-center gap-1 px-4 py-3">
+          <Link to="/" className="mr-3 font-display text-2xl">Motion<span className="text-primary">Play</span></Link>
+          <Link to="/" className={link} activeProps={active} activeOptions={{ exact: true }}>Profile</Link>
+          <Link to="/play" search={{}} className={link} activeProps={active}>Workout</Link>
+          <Link to="/library" className={link} activeProps={active}>Library</Link>
+          <Link to="/dance" className={link} activeProps={active}>Dance</Link>
+          <Link to="/dashboard" className={link} activeProps={active}>Dashboard</Link>
+          <span className="ml-auto"><MuteToggle /></span>
+        </nav>
+      </header>
+      <main className="mx-auto max-w-6xl px-4 py-8">
+        <Outlet />
+      </main>
     </QueryClientProvider>
   );
 }
