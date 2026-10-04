@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- MotionPlay profiles and progress remain device-local; the game must not depend on account authentication because players enter only name, age, and gender.

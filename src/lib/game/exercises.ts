@@ -1,149 +1,183 @@
-import { STANDING_KEYS, type PoseKey } from "./poses";
+export type Landmark = { x: number; y: number; z?: number; visibility?: number };
 
-export type Tier = "easy" | "medium" | "hard" | "special";
-export type Mode = "hold" | "reps" | "flow";
-export type Exercise = {
-  id: number;
-  name: string;
-  difficulty: Tier;
-  parts: string[];
-  description: string;
-  instructions: string[];
-  mode: Mode;
-  poses: PoseKey[];
-  hold?: number | undefined;
-  reps?: number | undefined;
-  beatMs?: number;
-  loops?: number;
-  special?: "random" | "follow";
-  sideView?: boolean;
+type Idx = 0 | 11 | 12 | 13 | 14 | 15 | 16 | 23 | 24 | 25 | 26 | 27 | 28;
+export type Pose = { [K in Idx]: Landmark };
+
+export type TargetPose = {
+  /** arm angles in degrees, 0 = straight down, 90 = sideways, 180 = straight up */
+  lArm: number;
+  rArm: number;
+  legs: "stand" | "wide" | "squat" | "treeL" | "kneeL" | "warrior" | "bend" | "hips";
+  lean?: number;
 };
 
-type Def = [number, string, Tier, string, string, Mode, PoseKey[], number, string];
-// id, name, tier, parts, description, mode, poses, hold-seconds or reps, cue
-const DEFS: Def[] = [
-  [1, "Arms Up", "easy", "Shoulders, Arms", "Reach both arms straight up to the sky.", "hold", ["armsUp"], 5, "Stretch tall like a rocket"],
-  [2, "Left Arm Raise", "easy", "Left Shoulder", "Raise your left arm straight up.", "hold", ["leftUp"], 5, "Keep your right arm relaxed"],
-  [3, "Right Arm Raise", "easy", "Right Shoulder", "Raise your right arm straight up.", "hold", ["rightUp"], 5, "Keep your left arm relaxed"],
-  [4, "Hands on Hips", "easy", "Shoulders, Core", "Place both hands on your hips, elbows out.", "hold", ["hips"], 5, "Stand proud like a hero"],
-  [5, "Hands Above Head", "easy", "Shoulders, Arms", "Join your hands together above your head.", "hold", ["handsTop"], 5, "Make a pointy roof"],
-  [6, "Touch Toes", "easy", "Hamstrings, Back", "Bend forward and reach down to your toes.", "hold", ["toeTouch"], 4, "Bend gently, don't bounce"],
-  [7, "Side Arm Stretch", "easy", "Shoulders, Chest", "Stretch both arms out to the sides like a T.", "hold", ["tPose"], 6, "Arms level with shoulders"],
-  [8, "Front Arm Stretch", "easy", "Shoulders, Upper Back", "Stretch both arms straight forward.", "hold", ["armsFront"], 5, "Reach toward the camera"],
-  [9, "Shoulder Circles", "easy", "Shoulders", "Move arms out, up, and down in big circles.", "reps", ["tPose", "armsUp", "stand"], 4, "Big slow circles"],
-  [10, "Neck Side Stretch", "easy", "Neck, Shoulders", "Hands on hips, gently tilt your head side to side.", "hold", ["hips"], 6, "Slow and gentle"],
-  [11, "Standing Side Bend", "easy", "Obliques, Core", "Reach one arm overhead and bend to each side.", "reps", ["bendLeft", "bendRight"], 4, "Bend like a rainbow"],
-  [12, "Heel Raises", "easy", "Calves", "Rise up on your toes with hands up high.", "reps", ["stand", "handsTop"], 6, "Up on tiptoes"],
-  [13, "Toe Touch Hold", "easy", "Hamstrings", "Reach down and hold near your toes.", "hold", ["toeTouch"], 8, "Breathe while you hold"],
-  [14, "Arm Open and Close", "easy", "Chest, Shoulders", "Open arms wide, then bring them in front.", "reps", ["tPose", "armsFront"], 6, "Like giving a big hug"],
-  [15, "Marching in Place", "easy", "Legs, Hips", "March by lifting each knee in turn.", "reps", ["kneeLeft", "kneeRight"], 8, "Left, right, left, right"],
-  [16, "Jumping Jacks", "medium", "Full Body", "Jump feet out and arms up, then back in.", "reps", ["stand", "jackOpen"], 10, "Open and close"],
-  [17, "Squats", "medium", "Legs, Glutes", "Sit back and down, then stand tall.", "reps", ["stand", "squat"], 8, "Chest up, knees out"],
-  [18, "High Knees", "medium", "Legs, Cardio", "Drive each knee up high, quickly.", "reps", ["kneeLeft", "kneeRight"], 10, "Knees to hip height"],
-  [19, "Side Steps", "medium", "Legs, Hips", "Step wide, then bring feet together.", "reps", ["wideStance", "stand"], 8, "Quick light feet"],
-  [20, "Side Lunges", "medium", "Inner Thighs, Glutes", "Lunge to one side, then the other.", "reps", ["sideLungeLeft", "sideLungeRight"], 6, "Keep the other leg straight"],
-  [21, "Front Lunges", "medium", "Legs, Glutes", "Step forward and bend both knees.", "reps", ["stand", "lungeLeft"], 6, "Front knee over ankle"],
-  [22, "Standing Knee Raise", "medium", "Hips, Core", "Lift your left knee up and hold.", "hold", ["kneeLeft"], 5, "Balance tall"],
-  [23, "Butt Kicks", "medium", "Hamstrings, Cardio", "Kick heels up toward your bottom.", "reps", ["kickLeft", "kickRight"], 10, "Fast feet"],
-  [24, "Standing Leg Raise", "medium", "Hips, Quads", "Lift your left leg forward and hold.", "hold", ["legFrontLeft"], 5, "Keep the leg straight"],
-  [25, "Standing Side Leg Raise", "medium", "Outer Hips", "Lift your left leg out to the side.", "hold", ["legSideLeft"], 5, "Toes point forward"],
-  [26, "Torso Twist", "medium", "Core, Obliques", "Open arms wide then twist them in front.", "reps", ["armsFront", "tPose"], 8, "Turn from your waist"],
-  [27, "Standing Cross Crunch", "medium", "Core", "Bring knee up toward the opposite elbow.", "reps", ["crossL", "crossR"], 6, "Squeeze your tummy"],
-  [28, "Calf Raises", "medium", "Calves", "Rise onto toes and lower slowly.", "reps", ["stand", "handsTop"], 10, "Slow and controlled"],
-  [29, "Knee to Elbow", "medium", "Core, Hips", "Alternate knee-to-elbow touches.", "reps", ["crossL", "crossR"], 8, "Touch and switch"],
-  [30, "Side Knee Lift", "medium", "Obliques, Hips", "Lift each knee out to the side.", "reps", ["sideKneeL", "sideKneeR"], 8, "Hands on hips"],
-  [31, "Warrior Pose", "hard", "Legs, Shoulders", "Lunge deep with arms stretched wide.", "hold", ["warrior"], 8, "Strong like a warrior"],
-  [32, "Tree Pose", "hard", "Balance, Core", "Foot on inner leg, hands together overhead.", "hold", ["tree"], 8, "Find a steady spot to look at"],
-  [33, "Single Leg Balance", "hard", "Balance, Ankles", "Stand on one leg with arms out wide.", "hold", ["balance"], 10, "Stay still"],
-  [34, "Deep Squat", "hard", "Legs, Hips", "Sink low into a deep squat and hold.", "hold", ["deepSquat"], 8, "Heels down"],
-  [35, "Squat + Arms Up", "hard", "Legs, Shoulders", "Squat down while reaching arms up.", "reps", ["stand", "squatArmsUp"], 8, "Reach as you sit"],
-  [36, "Lunge + Arms Up", "hard", "Legs, Shoulders", "Hold a lunge with arms reaching up.", "hold", ["lungeArmsUp"], 8, "Tall upper body"],
-  [37, "Reverse Lunge", "hard", "Legs, Glutes", "Step back into a lunge, then return.", "reps", ["stand", "lungeRight"], 8, "Step back softly"],
-  [38, "Curtsy Lunge", "hard", "Glutes, Thighs", "Cross one leg behind and bend.", "reps", ["stand", "curtsy"], 8, "Like a royal bow"],
-  [39, "High Knee Sprint", "hard", "Cardio, Legs", "Sprint in place with very high knees.", "reps", ["kneeLeft", "kneeRight"], 16, "As fast as you can"],
-  [40, "Jump Squat", "hard", "Legs, Power", "Squat, then explode up with arms high.", "reps", ["squat", "armsUp"], 8, "Land softly"],
-  [41, "Star Jump", "hard", "Full Body, Power", "Crouch, then jump into a big star.", "reps", ["squat", "jackOpen"], 8, "Be a shining star"],
-  [42, "Plank", "hard", "Core, Shoulders", "Side-on to camera, hold a straight plank.", "hold", ["plank"], 15, "Straight line head to heels"],
-  [43, "Plank Shoulder Tap", "hard", "Core, Shoulders", "In plank, tap a hand to the opposite shoulder.", "reps", ["plankTap", "plank"], 8, "Hips stay still"],
-  [44, "Mountain Climbers", "hard", "Core, Cardio", "In plank, drive knees toward chest.", "reps", ["climberL", "climberR"], 12, "Run in the plank"],
-  [45, "Push-Up", "hard", "Chest, Arms", "Lower your chest, then push back up.", "reps", ["plank", "pushDown"], 8, "Elbows at 45 degrees"],
-  [46, "Side Plank", "hard", "Obliques, Shoulders", "Balance on one arm, other arm up.", "hold", ["sidePlank"], 12, "Lift your hips"],
-  [47, "Bear Crawl", "hard", "Full Body", "Shift between hips-high bear and plank.", "reps", ["bear", "plank"], 8, "Knees hover"],
-  [48, "Burpee", "hard", "Full Body, Cardio", "Stand, squat, kick to plank, and back.", "reps", ["stand", "squat", "plank"], 6, "Keep moving"],
-];
+export type Exercise = {
+  id: string;
+  name: string;
+  instructions: string[];
+  target: TargetPose;
+  balance?: boolean;
+  score: (lm: Pose) => number; // 0..100
+};
 
-const SIDE = new Set([42, 43, 44, 45, 46, 47, 48]);
+const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const dist = (a: Landmark, b: Landmark) => Math.hypot(a.x - b.x, a.y - b.y);
+function angle(a: Landmark, b: Landmark, c: Landmark) {
+  const ab = Math.atan2(a.y - b.y, a.x - b.x);
+  const cb = Math.atan2(c.y - b.y, c.x - b.x);
+  let d = Math.abs(((ab - cb) * 180) / Math.PI);
+  if (d > 180) d = 360 - d;
+  return d;
+}
+/** 1 inside [lo,hi], linear falloff over `soft` outside */
+const inRange = (v: number, lo: number, hi: number, soft: number) =>
+  v < lo ? clamp(1 - (lo - v) / soft) : v > hi ? clamp(1 - (v - hi) / soft) : 1;
+/** how much `a` is above `b` (y smaller), full score at margin */
+const above = (a: Landmark, b: Landmark, margin = 0.05) => clamp((b.y - a.y) / margin + 0.5);
+const avg = (xs: number[]) => (xs.reduce((s, x) => s + x, 0) / xs.length) * 100;
+
+// MediaPipe indices
+const NOSE = 0 as const, LS = 11 as const, RS = 12 as const, LE = 13, RE = 14, LW = 15, RW = 16, LH = 23, RH = 24, LK = 25, RK = 26, LA = 27, RA = 28;
+const sw = (l: Pose) => Math.max(dist(l[LS], l[RS]), 0.05);
+const armStraight = (l: Pose, s: Idx, e: Idx, w: Idx) => inRange(angle(l[s], l[e], l[w]), 145, 180, 50);
+const kneeAngle = (l: Pose, h: Idx, k: Idx, a: Idx) => angle(l[h], l[k], l[a]);
 
 export const EXERCISES: Exercise[] = [
-  ...DEFS.map(([id, name, difficulty, parts, description, mode, poses, n, cue]): Exercise => ({
-    id, name, difficulty, parts: parts.split(", "), description, mode, poses,
-    hold: mode === "hold" ? n : undefined,
-    reps: mode === "reps" ? n : undefined,
-    sideView: SIDE.has(id),
-    instructions: [
-      description,
-      mode === "hold" ? `Hold the pose for ${n} seconds.` : `Complete ${n} reps, matching each pose in order.`,
-      cue + ".",
-      ...(SIDE.has(id) ? ["Turn sideways so the camera sees your whole body."] : []),
-    ],
-  })),
   {
-    id: 49, name: "Follow the Cartoon", difficulty: "special", parts: ["Full Body", "Reaction"],
-    description: "Copy your coach as they jump between random poses.", mode: "flow", poses: [], beatMs: 3000, loops: 1, special: "follow",
-    instructions: ["Watch your coach.", "Copy each new pose before the beat ends.", "Every match counts as a hit."],
+    id: "arms-up", name: "Arms Up",
+    instructions: ["Stand straight.", "Raise both arms above your head.", "Keep your arms straight.", "Hold the pose."],
+    target: { lArm: 175, rArm: 175, legs: "stand" },
+    score: (l) => avg([above(l[LW], l[NOSE]), above(l[RW], l[NOSE]), armStraight(l, LS, LE, LW), armStraight(l, RS, RE, RW)]),
   },
   {
-    id: 50, name: "Random Pose Challenge", difficulty: "special", parts: ["Full Body", "Memory"],
-    description: "Match five surprise poses as fast as you can.", mode: "reps", poses: [], reps: 1, special: "random",
-    instructions: ["Five random poses appear.", "Match each one to unlock the next.", "Finish them all to win."],
+    id: "left-arm", name: "Left Arm Raise",
+    instructions: ["Stand straight.", "Raise your left arm above your head.", "Keep your right arm down.", "Hold the pose."],
+    target: { lArm: 175, rArm: 10, legs: "stand" },
+    score: (l) => avg([above(l[LW], l[NOSE]), clamp((l[RW].y - l[RS].y) / 0.15), armStraight(l, LS, LE, LW)]),
+  },
+  {
+    id: "right-arm", name: "Right Arm Raise",
+    instructions: ["Stand straight.", "Raise your right arm above your head.", "Keep your left arm down.", "Hold the pose."],
+    target: { lArm: 10, rArm: 175, legs: "stand" },
+    score: (l) => avg([above(l[RW], l[NOSE]), clamp((l[LW].y - l[LS].y) / 0.15), armStraight(l, RS, RE, RW)]),
+  },
+  {
+    id: "jumping-jack", name: "Jumping Jack",
+    instructions: ["Jump your feet wide apart.", "Raise both arms above your head.", "Make a big star shape.", "Hold the position."],
+    target: { lArm: 150, rArm: 150, legs: "wide" },
+    score: (l) => avg([above(l[LW], l[NOSE]), above(l[RW], l[NOSE]), clamp(Math.abs(l[LA].x - l[RA].x) / (sw(l) * 1.6))]),
+  },
+  {
+    id: "squat", name: "Squat",
+    instructions: ["Stand with your feet shoulder width apart.", "Bend your knees.", "Lower your body.", "Keep your back straight.", "Hold the position."],
+    target: { lArm: 90, rArm: 90, legs: "squat" },
+    score: (l) => avg([inRange(kneeAngle(l, LH, LK, LA), 70, 125, 50), inRange(kneeAngle(l, RH, RK, RA), 70, 125, 50)]),
+  },
+  {
+    id: "touch-toes", name: "Touch Toes",
+    instructions: ["Stand with your feet together.", "Bend forward at your hips.", "Reach your hands down to your toes.", "Hold the stretch."],
+    target: { lArm: 0, rArm: 0, legs: "bend" },
+    score: (l) => avg([clamp((l[LW].y - l[LK].y) / 0.1 + 0.6), clamp((l[RW].y - l[RK].y) / 0.1 + 0.6), inRange(angle(l[LS], l[LH], l[LK]), 20, 110, 50)]),
+  },
+  {
+    id: "hands-hips", name: "Hands on Hips",
+    instructions: ["Stand straight.", "Place both hands on your hips.", "Point your elbows out.", "Hold the pose."],
+    target: { lArm: 25, rArm: 25, legs: "hips" },
+    score: (l) => avg([clamp(1 - (dist(l[LW], l[LH]) - 0.06) / 0.12), clamp(1 - (dist(l[RW], l[RH]) - 0.06) / 0.12), inRange(angle(l[LS], l[LE], l[LW]), 50, 130, 40), inRange(angle(l[RS], l[RE], l[RW]), 50, 130, 40)]),
+  },
+  {
+    id: "side-stretch", name: "Side Stretch",
+    instructions: ["Stand straight.", "Raise both arms above your head.", "Lean your body to one side.", "Hold the stretch."],
+    target: { lArm: 160, rArm: 175, legs: "stand", lean: 15 },
+    score: (l) => {
+      const shoulderX = (l[LS].x + l[RS].x) / 2, hipX = (l[LH].x + l[RH].x) / 2;
+      return avg([above(l[LW], l[NOSE]), above(l[RW], l[NOSE]), clamp(Math.abs(shoulderX - hipX) / 0.06)]);
+    },
+  },
+  {
+    id: "warrior", name: "Warrior Pose",
+    instructions: ["Step your feet wide apart.", "Bend your front knee.", "Stretch your arms out to the sides.", "Hold the position."],
+    target: { lArm: 90, rArm: 90, legs: "warrior" },
+    score: (l) => {
+      const kl = kneeAngle(l, LH, LK, LA), kr = kneeAngle(l, RH, RK, RA);
+      const bent = Math.min(kl, kr), straight = Math.max(kl, kr);
+      return avg([clamp(1 - Math.abs(l[LW].y - l[LS].y) / 0.12), clamp(1 - Math.abs(l[RW].y - l[RS].y) / 0.12), inRange(bent, 80, 140, 40), inRange(straight, 150, 180, 40)]);
+    },
+  },
+  {
+    id: "tree", name: "Tree Pose", balance: true,
+    instructions: ["Stand straight.", "Lift one foot.", "Keep your balance.", "Hold the position."],
+    target: { lArm: 170, rArm: 170, legs: "treeL" },
+    score: (l) => {
+      const lift = Math.abs(l[LA].y - l[RA].y);
+      const standing = l[LA].y > l[RA].y ? kneeAngle(l, LH, LK, LA) : kneeAngle(l, RH, RK, RA);
+      return avg([clamp(lift / 0.1), clamp(lift / 0.1), inRange(standing, 155, 180, 40)]);
+    },
+  },
+  {
+    id: "high-knees", name: "High Knees",
+    instructions: ["Stand straight.", "Lift one knee up high.", "Bring it to hip height.", "Hold the position."],
+    target: { lArm: 40, rArm: 40, legs: "kneeL" },
+    score: (l) => {
+      const best = Math.max(clamp((l[LH].y + 0.08 - l[LK].y) / 0.1), clamp((l[RH].y + 0.08 - l[RK].y) / 0.1));
+      return best * 100;
+    },
+  },
+  {
+    id: "one-leg", name: "One-Leg Balance", balance: true,
+    instructions: ["Stand tall.", "Lift one knee up.", "Stretch your arms out to the sides.", "Balance and hold."],
+    target: { lArm: 90, rArm: 90, legs: "kneeL" },
+    score: (l) => {
+      const lift = Math.abs(l[LA].y - l[RA].y);
+      return avg([clamp(lift / 0.1), clamp(1 - Math.abs(l[LW].y - l[LS].y) / 0.12), clamp(1 - Math.abs(l[RW].y - l[RS].y) / 0.12)]);
+    },
+  },
+  {
+    id: "rapid-arms", name: "Rapid Arms Up",
+    instructions: ["Stand straight.", "Shoot both arms up fast.", "Keep them straight.", "Hold at the top."],
+    target: { lArm: 178, rArm: 178, legs: "stand" },
+    score: (l) => avg([above(l[LW], l[NOSE], 0.04), above(l[RW], l[NOSE], 0.04), armStraight(l, LS, LE, LW), armStraight(l, RS, RE, RW)]),
+  },
+  {
+    id: "squat-arms", name: "Squat + Arms Up",
+    instructions: ["Bend your knees into a squat.", "Stand up and raise both arms.", "Repeat with me.", "Hold either pose."],
+    target: { lArm: 175, rArm: 175, legs: "stand" },
+    score: (l) => Math.max(
+      avg([inRange(kneeAngle(l, LH, LK, LA), 70, 125, 50), inRange(kneeAngle(l, RH, RK, RA), 70, 125, 50)]),
+      avg([above(l[LW], l[NOSE]), above(l[RW], l[NOSE]), armStraight(l, LS, LE, LW), armStraight(l, RS, RE, RW)]),
+    ),
+  },
+  {
+    id: "hands-above", name: "Hands Above Head",
+    instructions: ["Stand straight.", "Raise both hands above your head.", "Bring your hands together.", "Hold the pose."],
+    target: { lArm: 165, rArm: 165, legs: "stand" },
+    score: (l) => avg([above(l[LW], l[NOSE], 0.08), above(l[RW], l[NOSE], 0.08), clamp(1 - (dist(l[LW], l[RW]) - sw(l) * 0.4) / sw(l))]),
   },
 ];
 
-export const getExercise = (id: number) => EXERCISES.find((e) => e.id === id);
-
-export type Dance = { id: number; name: string; vibe: string; steps: PoseKey[]; beatMs: number; loops: number };
-export const DANCES: Dance[] = [
-  { id: 101, name: "Squat Groove", vibe: "Squat → Arms Up → Side Step → Jump → High Knee", steps: ["squat", "armsUp", "wideStance", "jackOpen", "kneeLeft"], beatMs: 1800, loops: 2 },
-  { id: 102, name: "Hero Shuffle", vibe: "T-Pose → Lunge → Arms Up → Knee → Star", steps: ["tPose", "lungeLeft", "armsUp", "kneeRight", "jackOpen"], beatMs: 1600, loops: 2 },
-  { id: 103, name: "Rainbow Wave", vibe: "Bend Left → Bend Right → Hands Up → Hips → Squat", steps: ["bendLeft", "bendRight", "handsTop", "hips", "squat"], beatMs: 2000, loops: 2 },
-  { id: 104, name: "Turbo Party", vibe: "Jack → Squat → Knee L → Knee R → Arms Up → Warrior", steps: ["jackOpen", "squat", "kneeLeft", "kneeRight", "armsUp", "warrior"], beatMs: 1300, loops: 2 },
+export const LEVELS: string[][] = [
+  ["arms-up", "left-arm", "right-arm", "hands-hips"],
+  ["hands-above", "jumping-jack", "squat", "side-stretch"],
+  ["touch-toes", "high-knees", "warrior", "tree"],
 ];
 
-export const danceToExercise = (d: Dance): Exercise => ({
-  id: d.id, name: d.name, difficulty: "special", parts: ["Full Body", "Rhythm"], description: d.vibe,
-  mode: "flow", poses: d.steps, beatMs: d.beatMs, loops: d.loops,
-  instructions: ["Hit each move on the beat.", d.vibe],
-});
-
-/** Fill in random poses for special exercises. Call from client code only. */
-export function prepare(ex: Exercise): Exercise {
-  if (!ex.special) return ex;
-  const pick = (n: number) => Array.from({ length: n }, () => STANDING_KEYS[Math.floor(Math.random() * STANDING_KEYS.length)]!);
-  return { ...ex, poses: pick(ex.special === "follow" ? 6 : 5) };
+/** Build the level list for a difficulty module: each level draws a different slice of the pool. */
+export function buildLevels(pool: string[], sizes: number[], shorten = false): string[][] {
+  let k = 0;
+  return sizes.map((n) => {
+    const size = shorten ? Math.max(2, n - 1) : n;
+    const lvl = Array.from({ length: size }, (_, i) => pool[(k + i) % pool.length]!);
+    k += size;
+    return lvl;
+  });
 }
 
-export type AgeBand = {
-  label: string; tiers: Tier[]; hardMax: number; paceMult: number; repMult: number; holdMult: number;
-  count: number; tolBonus: number; demoSec: number; voiceEvery: number; note: string;
-};
+export const getExercise = (id: string) => EXERCISES.find((e) => e.id === id)!;
 
-export function ageBand(age: number): AgeBand {
-  if (age <= 8) return { label: "Little Movers (5–8)", tiers: ["easy", "special"], hardMax: 0, paceMult: 1.5, repMult: 0.6, holdMult: 0.7, count: 4, tolBonus: 10, demoSec: 6, voiceEvery: 3500, note: "Simple moves, longer demos, slower cartoon, extra voice help." };
-  if (age <= 12) return { label: "Junior Heroes (9–12)", tiers: ["easy", "medium", "special"], hardMax: 0, paceMult: 1.2, repMult: 0.8, holdMult: 0.9, count: 5, tolBonus: 5, demoSec: 4, voiceEvery: 5000, note: "Basic + intermediate moves at a moderate pace." };
-  if (age <= 17) return { label: "Teen Challengers (13–17)", tiers: ["easy", "medium", "hard", "special"], hardMax: 41, paceMult: 1, repMult: 1.1, holdMult: 1, count: 6, tolBonus: 0, demoSec: 3, voiceEvery: 6000, note: "Intermediate moves, faster pace, more reps, combo challenges." };
-  return { label: "Elite Athletes (18–25)", tiers: ["easy", "medium", "hard", "special"], hardMax: 48, paceMult: 0.85, repMult: 1.3, holdMult: 1.2, count: 7, tolBonus: -4, demoSec: 2.5, voiceEvery: 7000, note: "Full library, advanced moves, tighter matching, rapid challenges." };
-}
-
-export const isAllowed = (ex: Exercise, band: AgeBand) =>
-  band.tiers.includes(ex.difficulty) && (ex.difficulty !== "hard" || ex.id <= band.hardMax);
-
-export const BASE_TOL = { easy: 38, medium: 30, hard: 23 } as const;
-
-export function buildWorkout(age: number, difficulty: "easy" | "medium" | "hard"): Exercise[] {
-  const band = ageBand(age);
-  const want: Tier[] = difficulty === "easy" ? ["easy"] : difficulty === "medium" ? ["easy", "medium"] : ["medium", "hard"];
-  let pool = EXERCISES.filter((e) => isAllowed(e, band) && want.includes(e.difficulty));
-  if (pool.length < band.count) pool = EXERCISES.filter((e) => isAllowed(e, band) && e.difficulty !== "special");
-  const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, band.count - 1);
-  return [...shuffled, getExercise(Math.random() < 0.5 ? 49 : 50)!];
+export function scorePose(ex: Exercise, lm: Landmark[] | undefined): number {
+  if (!lm || lm.length < 29) return 0;
+  const pose = lm as unknown as Pose;
+  const key = ([LS, RS, LH, RH] as const).map((i) => pose[i].visibility ?? 1);
+  if (Math.min(...key) < 0.3) return 0;
+  return Math.round(clamp(ex.score(pose) / 100) * 100);
 }
