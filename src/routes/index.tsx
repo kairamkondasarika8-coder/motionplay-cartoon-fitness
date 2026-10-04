@@ -4,12 +4,10 @@ import { CharacterSelect } from "@/components/game/CharacterSelect";
 import { GameScreen } from "@/components/game/GameScreen";
 import { Dashboard } from "@/components/game/Dashboard";
 import { VoiceControls } from "@/components/game/VoiceControls";
-import { ProfileForm, type AuthMode, type AuthSubmit } from "@/components/game/ProfileForm";
+import { ProfileForm, type ProfileSubmit } from "@/components/game/ProfileForm";
 import { Avatar } from "@/components/game/Avatar";
-import { supabase } from "@/integrations/supabase/client";
-import type { User } from "@supabase/supabase-js";
 import { CHARACTERS, type AchievementId, type Character, type Difficulty } from "@/lib/game/config";
-import { loadCoins, loadVoice, personalBest, saveProfile, saveVoice, type Profile, type Session, type VoiceSettings } from "@/lib/game/storage";
+import { loadCoins, loadProfile, loadVoice, personalBest, saveProfile, saveVoice, type Profile, type Session, type VoiceSettings } from "@/lib/game/storage";
 import { VoiceCoach } from "@/lib/game/voice";
 
 export const Route = createFileRoute("/")({
@@ -27,7 +25,7 @@ export const Route = createFileRoute("/")({
   component: App,
 });
 
-type Screen = "splash" | "auth" | "profile" | "select" | "game" | "dashboard";
+type Screen = "splash" | "profile" | "select" | "game" | "dashboard";
 
 function App() {
   const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>(() => loadVoice());
@@ -39,61 +37,14 @@ function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [newAch, setNewAch] = useState<AchievementId[]>([]);
   const [gameKey, setGameKey] = useState(0);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [authMode, setAuthMode] = useState<AuthMode>("signup");
+  const [profile, setProfile] = useState<Profile | null>(() => loadProfile());
 
-  useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => setUser(session?.user ?? null));
-    void supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));
-    return () => sub.subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!user) { setProfile(null); return; }
-    let cancelled = false;
-    void (async () => {
-      const { data } = await supabase.from("profiles").select("name, age, gender, avatar").eq("id", user.id).maybeSingle();
-      let p = data as Profile | null;
-      if (!p) {
-        const m = user.user_metadata ?? {};
-        const pendingAvatar = localStorage.getItem("mp.pendingAvatar");
-        p = { name: String(m["name"] ?? user.email?.split("@")[0] ?? "Player"), age: Number(m["age"]) || 10, gender: (m["gender"] ?? "Prefer not to say") as Profile["gender"], avatar: pendingAvatar };
-        await supabase.from("profiles").insert({ id: user.id, ...p });
-        localStorage.removeItem("mp.pendingAvatar");
-      }
-      if (!cancelled) { setProfile(p); saveProfile(p); }
-    })();
-    return () => { cancelled = true; };
-  }, [user]);
-
-  const handleAuth = async (d: AuthSubmit): Promise<string | null> => {
-    if (d.mode === "login") {
-      const { error } = await supabase.auth.signInWithPassword({ email: d.email, password: d.password });
-      if (error) return error.message;
-      void voice.speak("Welcome back! Choose your cartoon coach.", { interrupt: true });
-      setScreen("select");
-      return null;
-    }
-    if (d.mode === "signup") {
-      const { name, age, gender, avatar } = d.profile;
-      if (avatar) localStorage.setItem("mp.pendingAvatar", avatar); else localStorage.removeItem("mp.pendingAvatar");
-      const { data, error } = await supabase.auth.signUp({ email: d.email, password: d.password, options: { emailRedirectTo: window.location.origin, data: { name, age, gender } } });
-      if (error) return error.message;
-      if (!data.session) { setAuthMode("login"); return "🎉 Account created! Check your email to confirm, then log in."; }
-      void voice.speak(`Welcome, ${name}! Choose your cartoon coach.`, { interrupt: true });
-      setScreen("select");
-      return null;
-    }
-    if (!user) return "Please log in first.";
-    const { error } = await supabase.from("profiles").update({ ...d.profile, updated_at: new Date().toISOString() }).eq("id", user.id);
-    if (error) return error.message;
+  const handleProfile = async (d: ProfileSubmit): Promise<string | null> => {
     setProfile(d.profile); saveProfile(d.profile);
+    void voice.speak(`Welcome, ${d.profile.name}! Choose your cartoon coach.`, { interrupt: true });
     setScreen("select");
     return null;
   };
-
-  const logout = async () => { voice.cancel(); await supabase.auth.signOut(); setCharacter(null); setScreen("splash"); };
 
   useEffect(() => {
     voice.settings = voiceSettings;
@@ -126,7 +77,7 @@ function App() {
               <img key={c.id} src={c.image} alt={c.name} width={1024} height={1024} className="h-28 w-28 animate-bob object-contain sm:h-36 sm:w-36" style={{ animationDelay: `${i * 0.2}s` }} />
             ))}
           </div>
-          {user && profile ? (
+          {profile ? (
             <>
               <div className="mt-6"><Avatar profile={profile} size={112} /></div>
               <h1 className="mt-4 text-5xl font-bold sm:text-6xl">Welcome back, {profile.name}! 👋</h1>
@@ -134,7 +85,6 @@ function App() {
               <div className="mt-8 flex flex-wrap justify-center gap-3">
                 <button onClick={() => setScreen("select")} className="rounded-full border-[3px] border-border bg-primary px-10 py-4 font-display text-3xl font-bold text-primary-foreground shadow-pop transition active:translate-y-1">▶ Continue</button>
                 <button onClick={() => setScreen("profile")} className="rounded-full border-[3px] border-border bg-card px-6 py-4 font-display text-xl font-bold shadow-pop-sm">✏️ Edit Profile</button>
-                <button onClick={logout} className="rounded-full border-[3px] border-border bg-card px-6 py-4 font-display text-xl font-bold shadow-pop-sm">🚪 Log out</button>
               </div>
             </>
           ) : (
@@ -143,28 +93,19 @@ function App() {
               <p className="mt-4 text-lg font-semibold text-muted-foreground">Your webcam watches your pose, your coach talks you through every move.</p>
               <div className="mt-8 flex flex-wrap justify-center gap-3">
                 <button
-                  onClick={() => { void voice.speak("Welcome to MotionPlay! Create your account to begin.", { interrupt: true }); setAuthMode("signup"); setScreen("auth"); }}
+                  onClick={() => { void voice.speak("Welcome to MotionPlay! Create your player profile to begin.", { interrupt: true }); setScreen("profile"); }}
                   className="rounded-full border-[3px] border-border bg-primary px-12 py-4 font-display text-3xl font-bold text-primary-foreground shadow-pop transition active:translate-y-1"
                 >
-                  👋 Get Started
+                  👋 Create Profile
                 </button>
-                <button onClick={() => { setAuthMode("login"); setScreen("auth"); }} className="rounded-full border-[3px] border-border bg-card px-8 py-4 font-display text-2xl font-bold shadow-pop-sm">🔐 Login</button>
               </div>
             </>
           )}
         </div>
       )}
 
-      {screen === "auth" && !user && (
-        <ProfileForm key={authMode} mode={authMode} initial={null} onModeChange={setAuthMode} onSubmit={handleAuth} onBack={() => setScreen("splash")} />
-      )}
-
-      {screen !== "splash" && screen !== "auth" && !user && (
-        <ProfileForm key={`gate-${authMode}`} mode={authMode} initial={null} onModeChange={setAuthMode} onSubmit={handleAuth} onBack={() => setScreen("splash")} />
-      )}
-
-      {screen === "profile" && user && profile && (
-        <ProfileForm key={`edit-${profile.avatar?.length ?? 0}`} mode="edit" initial={profile} onSubmit={handleAuth} onBack={() => setScreen("splash")} />
+      {screen === "profile" && (
+        <ProfileForm key={profile ? "edit" : "create"} mode={profile ? "edit" : "create"} initial={profile} onSubmit={handleProfile} onBack={() => setScreen("splash")} />
       )}
 
       {screen === "select" && profile && (
@@ -193,7 +134,7 @@ function App() {
         />
       )}
 
-      {screen === "dashboard" && user && (
+      {screen === "dashboard" && profile && (
         <Dashboard
           session={session}
           profile={profile}
